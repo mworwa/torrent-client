@@ -3,7 +3,6 @@ package torrentfile
 import (
 	"crypto/rand"
 	"crypto/sha1"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -11,18 +10,17 @@ import (
 )
 
 type TorrentFile struct {
-	Announce     string `json:"announce"`
-	Comment      string `json:"comment"`
-	CreationDate int    `json:"creation date"`
-	Info         Info   `json:"info"`
+	Announce     string
+	CreationDate int
+	Info         Info
 	InfoHash     [20]byte
 }
 
 type Info struct {
-	Length      int    `json:"length"`
-	Name        string `json:"name"`
-	PieceLength int    `json:"piece length"`
-	Pieces      string `json:"pieces"`
+	Length      int
+	Name        string
+	PieceLength int
+	Pieces      string
 }
 
 func Open(path string) (TorrentFile, error) {
@@ -32,36 +30,47 @@ func Open(path string) (TorrentFile, error) {
 	}
 
 	decodedValue, err := bencode.Decode(string(fileContent))
+
+	if err != nil {
+		return TorrentFile{}, err
+	}
+	torrentFile, err := createTorrentFile(decodedValue)
 	if err != nil {
 		return TorrentFile{}, err
 	}
 
-	jsonData, err := json.Marshal(decodedValue)
-	if err != nil {
-		return TorrentFile{}, fmt.Errorf("error marshalling json: %w", err)
-	}
-	var torrentFile TorrentFile
-	err = json.Unmarshal(jsonData, &torrentFile)
-
-	if err != nil {
-		return TorrentFile{}, fmt.Errorf("error unmarshalling json: %w", err)
-	}
-	hash, err := torrentFile.Info.hashInfo()
-	fmt.Println(hash, err)
-	if err != nil {
-		return TorrentFile{}, err
-	}
-	torrentFile.InfoHash = hash
 	return torrentFile, nil
 }
 
-func (i *Info) hashInfo() ([20]byte, error) {
-	info := map[string]interface{}{
-		"name":         i.Name,
-		"length":       i.Length,
-		"piece length": i.PieceLength,
-		"pieces":       i.Pieces,
+func createTorrentFile(decodedFile interface{}) (TorrentFile, error) {
+	decodedMap := decodedFile.(map[string]interface{})
+	announce := decodedMap["announce"].(string)
+	creationDate := decodedMap["creation date"].(int)
+
+	info := decodedMap["info"].(map[string]interface{})
+	lenght := info["length"].(int)
+	name := info["name"].(string)
+	pieceLenght := info["piece length"].(int)
+	pieces := info["pieces"].(string)
+	hash, err := hashInfo(info)
+	if err != nil {
+		return TorrentFile{}, err
 	}
+	torrentFile := TorrentFile{
+		Announce:     announce,
+		CreationDate: creationDate,
+		Info: Info{
+			Length:      lenght,
+			Name:        name,
+			PieceLength: pieceLenght,
+			Pieces:      pieces,
+		},
+		InfoHash: hash,
+	}
+	return torrentFile, nil
+}
+
+func hashInfo(info interface{}) ([20]byte, error) {
 	encodedInfo, err := bencode.Encode(info)
 	if err != nil {
 		return [20]byte{}, err
@@ -77,6 +86,12 @@ func (t *TorrentFile) DownloadToFile(path string) error {
 	if err != nil {
 		return err
 	}
+	peers, err := t.requestPeers(peerID, 6881)
 
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(peers)
 	return nil
 }

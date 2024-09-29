@@ -93,3 +93,4 @@ func TestDecodeList(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []interface{}{"list-item-1", 123}, list)
 }
+

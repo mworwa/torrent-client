@@ -10,7 +10,6 @@ func TestOpen(t *testing.T) {
 	torrentFile, _ := Open("testdata/file.torrent")
 
 	assert.Equal(t, "http://bttracker.debian.org:6969/announce", torrentFile.Announce)
-	assert.Equal(t, "\"Debian CD from cdimage.debian.org\"", torrentFile.Comment)
 	assert.Equal(t, 1725106229, torrentFile.CreationDate)
 	assert.Equal(t, 551858176, torrentFile.Info.Length)
 	assert.Equal(t, "debian-12.7.0-arm64-netinst.iso", torrentFile.Info.Name)
