@@ -3,6 +3,7 @@ package torrentfile
 import (
 	"crypto/rand"
 	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -24,6 +25,7 @@ type Info struct {
 }
 
 func Open(path string) (TorrentFile, error) {
+	fmt.Printf("Opening file from path: %s\n", path)
 	fileContent, err := os.ReadFile(path)
 	if err != nil {
 		return TorrentFile{}, err
@@ -86,12 +88,17 @@ func (t *TorrentFile) DownloadToFile(path string) error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("Requesting peers for peerID: %s\n", hex.EncodeToString(peerID[:]))
 	peers, err := t.requestPeers(peerID, 6881)
 
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(peers)
+	err = peers[0].Connect(t.InfoHash, peerID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
