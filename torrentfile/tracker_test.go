@@ -45,7 +45,7 @@ func TestRequestPeer(t *testing.T) {
 		Announce: mockServer.URL,
 	}
 
-	requestedPeers, err := torrentFile.requestPeers(peerID, port)
+	requestedPeers, err := torrentFile.RequestPeers(peerID, port)
 
 	expected := []peers.Peer{
 		{IP: net.IP{192, 0, 2, 123}, Port: uint16(6881)},

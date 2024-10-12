@@ -6,18 +6,25 @@ import (
 	"time"
 )
 
-func (p *Peer) Connect(infoHash [20]byte, peerID [20]byte) error {
+type pieceWork struct {
+	index  int
+	hash   [20]byte
+	lenght int
+}
+
+func (p *Peer) Connect(infoHash [20]byte, peerID [20]byte) (net.Conn, error) {
 	conn, err := p.establishConnection()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	handshakeMessage := p.createHandshakeMessage(infoHash, peerID)
-	err = performHandshake(conn, handshakeMessage)
+	err = p.performHandshake(conn, handshakeMessage)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return nil
+
+	return conn, nil
 }
 
 func (p *Peer) establishConnection() (net.Conn, error) {
@@ -32,7 +39,7 @@ func (p *Peer) establishConnection() (net.Conn, error) {
 	return conn, nil
 }
 
-func (peer *Peer) createHandshakeMessage(infoHash [20]byte, peerID [20]byte) []byte {
+func (p *Peer) createHandshakeMessage(infoHash [20]byte, peerID [20]byte) []byte {
 	protocol := "BitTorrent protocol"
 	protocolLen := byte(len(protocol))
 
@@ -50,8 +57,8 @@ func (peer *Peer) createHandshakeMessage(infoHash [20]byte, peerID [20]byte) []b
 	return handshake
 }
 
-func performHandshake(conn net.Conn, handshakeMessage []byte) error {
-	fmt.Printf("Performing handshake for message: %s", string(handshakeMessage))
+func (p *Peer) performHandshake(conn net.Conn, handshakeMessage []byte) error {
+	fmt.Println("Performing handshake")
 	_, err := conn.Write(handshakeMessage)
 	if err != nil {
 		return err
@@ -63,7 +70,12 @@ func performHandshake(conn net.Conn, handshakeMessage []byte) error {
 		return err
 	}
 
-	fmt.Println(response)
+	receivedInfoHash := response[28:48]
+	if string(receivedInfoHash) != string(handshakeMessage[28:48]) {
+		return fmt.Errorf("info hash mismatch")
+	}
+
+	fmt.Println("Handshake successful")
 
 	return nil
 }

@@ -1,9 +1,7 @@
 package torrentfile
 
 import (
-	"crypto/rand"
 	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -15,6 +13,7 @@ type TorrentFile struct {
 	CreationDate int
 	Info         Info
 	InfoHash     [20]byte
+	PieceHashes  [][20]byte
 }
 
 type Info struct {
@@ -82,23 +81,13 @@ func hashInfo(info interface{}) ([20]byte, error) {
 	return hash, nil
 }
 
-func (t *TorrentFile) DownloadToFile(path string) error {
-	var peerID [20]byte
-	_, err := rand.Read(peerID[:])
-	if err != nil {
-		return err
+func splitPieceHashes(pieces string) ([][20]byte, error) {
+	hashLen := 20
+	buf := []byte(pieces)
+	if len(buf)%hashLen != 0 {
+		err := fmt.Errorf("Recived malformed pieces of lenght %d", len(buf))
+		return nil, err
 	}
 
-	fmt.Printf("Requesting peers for peerID: %s\n", hex.EncodeToString(peerID[:]))
-	peers, err := t.requestPeers(peerID, 6881)
-
-	if err != nil {
-		return err
-	}
-
-	err = peers[0].Connect(t.InfoHash, peerID)
-	if err != nil {
-		return err
-	}
-	return nil
+	return nil, nil
 }

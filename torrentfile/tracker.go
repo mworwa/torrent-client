@@ -1,6 +1,8 @@
 package torrentfile
 
 import (
+	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -31,7 +33,8 @@ func (t *TorrentFile) buildTrackerURL(peerID [20]byte, port uint16) (string, err
 	return base.String(), nil
 }
 
-func (t *TorrentFile) requestPeers(peerID [20]byte, port uint16) ([]peers.Peer, error) {
+func (t *TorrentFile) RequestPeers(peerID [20]byte, port uint16) ([]peers.Peer, error) {
+	fmt.Printf("Requesting peers for peerID: %s\n", hex.EncodeToString(peerID[:]))
 	url, err := t.buildTrackerURL(peerID, port)
 	if err != nil {
 		return nil, err
